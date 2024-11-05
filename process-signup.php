@@ -3,17 +3,6 @@
 require_once('vendor/autoload.php');
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
-/*
-$connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest', 'testHost');
-
-$channel = $connection->channel();
-
-$channel->queue_declare('testQueue', true);
-$channel->queue_declare('responseQueue', true);
-
-$channel->exchange_declare('testExchange', 'topic', true, true, false);
-$channel->exchange_declare('responseExchange', 'topic', true, true, false);
-*/
 
 if (empty($_POST["name"])) {
     die("Name is required");
@@ -45,7 +34,7 @@ $email = $_POST["email"];
 $name = $_POST["name"];
 
 
-$connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest', 'testHost');
+$connection = new AMQPStreamConnection('10.241.109.75', 5672, 'test', 'test', 'testHost');
 $channel = $connection->channel();
 
 
@@ -59,21 +48,7 @@ $registerCreds = json_encode(['name'=> $name, 'email' => $email, 'password' => $
 $msg = new AMQPMessage($registerCreds);
 
 $channel->basic_publish($msg, 'testExchange', 'user');
-
-
 echo "sent message";
-
-$callback = function ($msg) {
-	echo 'Recieved response on responseQueue', $msg->body, "\n";
-
-	$respMsg = json_decode($msg->body, true);
-	$signup = $respMsg['signup'];
-	$message = $respMsg['message'];
-	echo $signup;
-};
-
-$channel->basic_consume('responseQueue','', false, true, false, false, $callback);
-
 try {
     $channel->consume();
 } catch (\Throwable $exception) {
@@ -82,3 +57,10 @@ try {
 
 $channel->close();
 $connection->close();
+
+if (headers_sent()) {
+    echo "Headers have already been sent!";
+} else {
+    header("Location: signup-success.html");
+    exit;
+}
