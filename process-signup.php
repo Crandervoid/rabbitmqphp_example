@@ -1,6 +1,5 @@
 
 <?php
-
 require_once('vendor/autoload.php');
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -34,57 +33,34 @@ $password = $_POST['password'];
 $email = $_POST["email"];
 $name = $_POST["name"];
 
-$connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest', 'testHost');
+
+$connection = new AMQPStreamConnection('10.241.109.75', 5672, 'test', 'test', 'testHost');
 $channel = $connection->channel();
 
+
 $channel->queue_declare('testQueue', true);
+$channel->queue_declare('responseQueue', true);
+
+$channel->exchange_declare('testExchange', 'topic', true, true, false);
 
 $registerCreds = json_encode(['name'=> $name, 'email' => $email, 'password' => $password]);
 
 $msg = new AMQPMessage($registerCreds);
 
 $channel->basic_publish($msg, 'testExchange', 'user');
-
-
 echo "sent message";
+try {
+    $channel->consume();
+} catch (\Throwable $exception) {
+    echo $exception->getMessage(), "is this the error", "\n";
+}
 
 $channel->close();
 $connection->close();
 
-/*
-$mysqli = require __DIR__ . "/database.php";
-
-$sql = "INSERT INTO users (uname, email, password_hash)
-        VALUES (?, ?, ?)";
-        
-$stmt = $mysqli->stmt_init();
-
-if ( ! $stmt->prepare($sql)) {
-    die("SQL error: " . $mysqli->error);
-}
-
-$stmt->bind_param("sss",
-                  $_POST["name"],
-                  $_POST["email"],
-                  $password_hash);
-                  
-if ($stmt->execute()) {
-
+if (headers_sent()) {
+    echo "Headers have already been sent!";
+} else {
     header("Location: signup-success.html");
     exit;
-    
-} else {
-    
-    if ($mysqli->errno === 1062) {
-        die("email already taken");
-    } else {
-        die($mysqli->error . " " . $mysqli->errno);
-    }
 }
- */
-
-
-
-
-
-
